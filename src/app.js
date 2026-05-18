@@ -26,7 +26,7 @@ app.use(express.json());
 // CORS (frontend + backend safe)
 app.use(
   cors({
-    origin: "http://localhost:5000",
+    origin: "https://restaurant-chatbot-8lr4.onrender.com",
     credentials: true,
   })
 );
