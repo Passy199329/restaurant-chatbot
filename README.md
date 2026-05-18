@@ -87,10 +87,11 @@ http://localhost:5000
 | Command | Action |
 |---|---|
 | 1 | Show menu |
-| 2 | Jollof Rice |
+| 2 | Fried Rice |
 | 3 | Fried Rice |
 | 4 | Chicken |
 | 5 | Burger |
+| 6 | Jollof Rice|
 | 97 | Current order |
 | 98 | Order history |
 | 99 | Checkout |
