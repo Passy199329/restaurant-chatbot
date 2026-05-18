@@ -3,7 +3,7 @@ const calculateTotal = require("../utils/calculateTotal");
 const generateResponse = require("../utils/generateResponse");
 const { getWelcomeMessage, getMenu } = require("../services/chatbotService");
 const Order = require("../models/Order");
-
+const baseUrl = process.env.BASE_URL || "http://localhost:5000";
 exports.chatBot = async (req, res) => {
   try {
 
@@ -81,7 +81,7 @@ exports.chatBot = async (req, res) => {
 
       return res.json({
         reply: `✅ Order placed successfully\nTotal: ₦${total}`,
-        paymentUrl: `http://localhost:5000/api/payment/pay/${order._id}`
+        paymentUrl: `${baseUrl}/api/payment/pay/${order._id}`
       });
     }
 
