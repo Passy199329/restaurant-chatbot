@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurant ChatBot</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chat-container {
+      width: 420px;
+      height: 650px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+    }
+
+    .chat-header {
+      background: #ff6b00;
+      color: white;
+      padding: 18px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      background: #fafafa;
+    }
+
+    .message {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      max-width: 75%;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .bot {
+      background: #e9ecef;
+      align-self: flex-start;
+    }
+
+    .user {
+      background: #d1e7ff;
+      align-self: flex-end;
+    }
+
+    .typing {
+      font-style: italic;
+      color: gray;
+    }
+
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    .chat-input input {
+      flex: 1;
+      border: none;
+      padding: 15px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .chat-input button {
+      border: none;
+      background: #ff6b00;
+      color: white;
+      width: 100px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .chat-input button:hover {
+      background: #e65c00;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 10px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+
+    .quick-actions button {
+      padding: 8px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #f1f1f1;
+    }
+
+    .quick-actions button:hover {
+      background: #ddd;
+    }
+
+    a {
+      color: #ff6b00;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+
+  <div class="chat-header">
+    🍽️ Restaurant ChatBot
+  </div>
+
+  <div id="messages" class="messages"></div>
+
+  <div class="quick-actions">
+    <button onclick="quickSend('1')">Order</button>
+    <button onclick="quickSend('97')">Current</button>
+    <button onclick="quickSend('98')">History</button>
+    <button onclick="quickSend('99')">Checkout</button>
+    <button onclick="quickSend('0')">Cancel</button>
+  </div>
+
+  <div class="chat-input">
+    <input
+      type="text"
+      id="messageInput"
+      placeholder="Type 1, 99, 98..."
+    />
+
+    <button onclick="sendMessage()">
+      Send
+    </button>
+  </div>
+
+</div>
+
+<script>
+
+const messagesDiv = document.getElementById('messages');
+const input = document.getElementById('messageInput');
+
+
+function addMessage(text, sender) {
+
+  const div = document.createElement('div');
+
+  div.classList.add('message');
+  div.classList.add(sender);
+
+  div.innerText = text;
+
+  messagesDiv.appendChild(div);
+
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+
+function showTyping() {
+
+  const div = document.createElement('div');
+
+  div.id = 'typing';
+
+  div.classList.add('message');
+  div.classList.add('bot');
+  div.classList.add('typing');
+
+  div.innerText = 'Bot is typing...';
+
+  messagesDiv.appendChild(div);
+
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+
+function removeTyping() {
+
+  const typing = document.getElementById('typing');
+
+  if (typing) {
+    typing.remove();
+  }
+}
+
+
+async function sendMessage(customMessage = null) {
+
+  const message = customMessage || input.value.trim();
+
+  if (!message) return;
+
+  addMessage(message, 'user');
+
+  input.value = '';
+
+  showTyping();
+
+  try {
+
+    const response = await fetch('/api/chatbot', {
+
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      credentials: 'include',
+
+      body: JSON.stringify({
+        message
+      })
+
+    });
+
+    const data = await response.json();
+
+    removeTyping();
+
+
+    // HANDLE PAYMENT LINK
+    if (data.paymentUrl) {
+
+      addMessage(data.reply, 'bot');
+
+      const payDiv = document.createElement('div');
+
+      payDiv.classList.add('message');
+      payDiv.classList.add('bot');
+
+      payDiv.innerHTML = `
+        <a href="${data.paymentUrl}" target="_blank">
+          Pay Now 💳
+        </a>
+      `;
+
+      messagesDiv.appendChild(payDiv);
+
+    } else {
+
+      addMessage(data.reply, 'bot');
+    }
+
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+  } catch (error) {
+
+    removeTyping();
+
+    addMessage('❌ Unable to connect to backend', 'bot');
+
+    console.log(error);
+  }
+}
+
+
+function quickSend(value) {
+  sendMessage(value);
+}
+
+
+input.addEventListener('keypress', function(e) {
+
+  if (e.key === 'Enter') {
+    sendMessage();
+  }
+
+});
+
+
+// LOAD WELCOME MESSAGE
+window.onload = async () => {
+
+  showTyping();
+
+  try {
+
+    const response = await fetch('/api/chatbot', {
+
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      credentials: 'include',
+
+      body: JSON.stringify({
+        message: 'welcome'
+      })
+
+    });
+
+    const data = await response.json();
+
+    removeTyping();
+
+    addMessage(data.reply, 'bot');
+
+  } catch (error) {
+
+    removeTyping();
+
+    addMessage('❌ Backend connection failed', 'bot');
+  }
+};
+
+</script>
+
+</body>
+</html>
